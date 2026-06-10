@@ -334,6 +334,37 @@ public class JournalDao {
         return hits;
     }
 
+    /**
+     * Full-text search returning richer results: date, title, and a snippet of
+     * matching text, ordered by relevance.
+     */
+    public List<SearchHit> searchHits(String query) {
+        String sql = """
+                SELECT e.entry_date,
+                       e.title,
+                       snippet(entries_fts, -1, '', '', '…', 12) AS snip
+                FROM entries_fts
+                JOIN entries e ON e.id = entries_fts.rowid
+                WHERE entries_fts MATCH ?
+                ORDER BY rank
+                """;
+        List<SearchHit> hits = new ArrayList<>();
+        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, query);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    hits.add(new SearchHit(
+                            LocalDate.parse(rs.getString("entry_date")),
+                            rs.getString("title"),
+                            rs.getString("snip")));
+                }
+            }
+        } catch (SQLException e) {
+            throw new JournalException("Failed to search for \"" + query + "\"", e);
+        }
+        return hits;
+    }
+
     /** Unchecked wrapper so UI code can surface DB errors without checked-exception noise. */
     public static class JournalException extends RuntimeException {
         public JournalException(String message, Throwable cause) {

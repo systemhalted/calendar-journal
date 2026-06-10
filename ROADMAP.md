@@ -57,7 +57,7 @@ These unlock most of the roadmap:
 | Writing | Autosave + unsaved-changes guard ✅ |
 | Writing | Entry title + word/character count ✅ |
 | Writing | Markdown editing with live preview ✅ |
-| Organize | Full-text search across all entries |
+| Organize | Full-text search across all entries ✅ |
 | Organize | Agenda/list view toggle |
 | Data | Manual backup & restore |
 | Data | Export to Markdown + PDF |

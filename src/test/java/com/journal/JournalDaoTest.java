@@ -146,6 +146,23 @@ class JournalDaoTest {
     }
 
     @Test
+    void searchHitsReturnDateTitleAndSnippet() {
+        JournalDao dao = freshDao();
+        LocalDate d = LocalDate.of(2026, 6, 9);
+        dao.saveEntry(d, "Kayaking trip", "we paddled all day on the lake");
+        List<SearchHit> hits = dao.searchHits("paddled");
+        assertEquals(1, hits.size());
+        assertEquals(d, hits.get(0).date());
+        assertEquals("Kayaking trip", hits.get(0).title());
+        assertTrue(hits.get(0).snippet().contains("paddled"));
+    }
+
+    @Test
+    void searchHitsAreEmptyWhenNothingMatches() {
+        assertTrue(freshDao().searchHits("nothingmatchesthis").isEmpty());
+    }
+
+    @Test
     void initIsIdempotent() {
         JournalDao dao = freshDao();
         dao.save(LocalDate.of(2026, 6, 9), "kept across re-init");

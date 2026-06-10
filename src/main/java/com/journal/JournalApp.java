@@ -8,6 +8,9 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
@@ -60,7 +63,14 @@ public class JournalApp extends Application {
         quit.setOnAction(e -> Platform.exit());
 
         Menu file = new Menu("File", null, preferences, new SeparatorMenuItem(), quit);
-        return new MenuBar(file);
+
+        MenuItem find = new MenuItem("Find…");
+        find.setAccelerator(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
+        find.setOnAction(e ->
+                new SearchDialog(stage, dao, settings, view::refresh).showAndWait());
+
+        Menu edit = new Menu("Edit", null, find);
+        return new MenuBar(file, edit);
     }
 
     public static void main(String[] args) {
