@@ -111,6 +111,41 @@ class JournalDaoTest {
     }
 
     @Test
+    void saveEntryRoundTripsTitleAndContent() {
+        JournalDao dao = freshDao();
+        LocalDate d = LocalDate.of(2026, 6, 9);
+        dao.saveEntry(d, "My Title", "the body");
+        Entry e = dao.loadEntry(d);
+        assertEquals("My Title", e.title());
+        assertEquals("the body", e.content());
+    }
+
+    @Test
+    void loadEntryReturnsNullWhenAbsent() {
+        assertNull(freshDao().loadEntry(LocalDate.of(2026, 6, 9)));
+    }
+
+    @Test
+    void saveEntryUpdatesInPlaceKeepingOneEntryPerDay() {
+        JournalDao dao = freshDao();
+        LocalDate d = LocalDate.of(2026, 6, 9);
+        dao.saveEntry(d, "t1", "c1");
+        dao.saveEntry(d, "t2", "c2");
+        Entry e = dao.loadEntry(d);
+        assertEquals("t2", e.title());
+        assertEquals("c2", e.content());
+        assertEquals(1, dao.datesWithEntries(YearMonth.of(2026, 6)).size());
+    }
+
+    @Test
+    void searchMatchesTitleWords() {
+        JournalDao dao = freshDao();
+        LocalDate d = LocalDate.of(2026, 6, 9);
+        dao.saveEntry(d, "Kayaking trip", "we paddled all day");
+        assertEquals(List.of(d), dao.search("Kayaking"));
+    }
+
+    @Test
     void initIsIdempotent() {
         JournalDao dao = freshDao();
         dao.save(LocalDate.of(2026, 6, 9), "kept across re-init");

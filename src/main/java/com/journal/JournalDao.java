@@ -225,6 +225,49 @@ public class JournalDao {
         }
     }
 
+    /** @return the entry (title + content) for the date, or {@code null} if none exists. */
+    public Entry loadEntry(LocalDate date) {
+        String sql = "SELECT title, content FROM entries WHERE entry_date = ? ORDER BY id LIMIT 1";
+        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, date.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? new Entry(rs.getString("title"), rs.getString("content")) : null;
+            }
+        } catch (SQLException e) {
+            throw new JournalException("Failed to load entry for " + date, e);
+        }
+    }
+
+    /** Insert or update the (single) entry for the given date, including its title. */
+    public void saveEntry(LocalDate date, String title, String content) {
+        String now = LocalDateTime.now().toString();
+        try (Connection conn = connect()) {
+            Integer id = findEntryId(conn, date);
+            if (id != null) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE entries SET title = ?, content = ?, updated_at = ? WHERE id = ?")) {
+                    ps.setString(1, title);
+                    ps.setString(2, content);
+                    ps.setString(3, now);
+                    ps.setInt(4, id);
+                    ps.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO entries (entry_date, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")) {
+                    ps.setString(1, date.toString());
+                    ps.setString(2, title);
+                    ps.setString(3, content);
+                    ps.setString(4, now);
+                    ps.setString(5, now);
+                    ps.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new JournalException("Failed to save entry for " + date, e);
+        }
+    }
+
     private Integer findEntryId(Connection conn, LocalDate date) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT id FROM entries WHERE entry_date = ? ORDER BY id LIMIT 1")) {

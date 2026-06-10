@@ -1,7 +1,8 @@
 package com.journal;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -22,32 +23,41 @@ class EntryAutosaveTest {
     }
 
     @Test
-    void nonBlankTextIsSaved() {
+    void nonBlankContentIsSavedWithTitle() {
         JournalDao dao = freshDao();
-        EntryAutosave.persist(dao, date, "a thought");
-        assertEquals("a thought", dao.load(date));
+        EntryAutosave.persist(dao, date, "A Title", "a thought");
+        Entry e = dao.loadEntry(date);
+        assertEquals("A Title", e.title());
+        assertEquals("a thought", e.content());
     }
 
     @Test
-    void blankTextRemovesExistingEntry() {
+    void titleAloneKeepsTheEntry() {
         JournalDao dao = freshDao();
-        dao.save(date, "to be cleared");
-        EntryAutosave.persist(dao, date, "");
-        assertNull(dao.load(date));
+        EntryAutosave.persist(dao, date, "Just a title", "");
+        assertNotNull(dao.loadEntry(date));
     }
 
     @Test
-    void whitespaceOnlyCountsAsBlank() {
+    void bothBlankRemovesExistingEntry() {
         JournalDao dao = freshDao();
-        dao.save(date, "something");
-        EntryAutosave.persist(dao, date, "   \n  ");
-        assertNull(dao.load(date));
+        dao.saveEntry(date, "t", "to be cleared");
+        EntryAutosave.persist(dao, date, "", "");
+        assertNull(dao.loadEntry(date));
     }
 
     @Test
-    void blankTextOnAbsentEntryDoesNotCreateOne() {
+    void whitespaceOnlyBothCountsAsBlank() {
         JournalDao dao = freshDao();
-        EntryAutosave.persist(dao, date, "");
-        assertNull(dao.load(date));
+        dao.saveEntry(date, "t", "c");
+        EntryAutosave.persist(dao, date, "  ", "  \n ");
+        assertNull(dao.loadEntry(date));
+    }
+
+    @Test
+    void blankOnAbsentEntryDoesNotCreateOne() {
+        JournalDao dao = freshDao();
+        EntryAutosave.persist(dao, date, "", "");
+        assertNull(dao.loadEntry(date));
     }
 }
