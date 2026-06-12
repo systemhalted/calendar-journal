@@ -24,11 +24,18 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            label: linux-x64
             type: deb
           - os: windows-latest
+            label: windows-x64
             type: msi
           - os: macos-latest
+            label: macos-arm64
             type: dmg
+          - os: macos-13
+            label: macos-intel
+            type: dmg
+            intel: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,7 +60,11 @@ jobs:
 
       - name: Build installer (macOS)
         if: runner.os == 'macOS'
-        run: bash build-mac.sh
+        run: |
+          bash build-mac.sh
+          if [ "${{ matrix.intel }}" = "true" ]; then
+            for f in packaging/dist/*.dmg; do mv "$f" "${f%.dmg}-Intel.dmg"; done
+          fi
 
       - name: Build installer (Windows)
         if: runner.os == 'Windows'
@@ -63,7 +74,7 @@ jobs:
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: installer-${{ matrix.type }}
+          name: installer-${{ matrix.label }}
           path: packaging/dist/*.${{ matrix.type }}
           if-no-files-found: error
 
@@ -76,6 +87,10 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+
+      - name: Generate SHA-256 checksums
+        working-directory: dist
+        run: sha256sum * | tee SHA256SUMS.txt
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -91,6 +106,14 @@ jobs:
             ## Installers
             - **Linux (Debian/Ubuntu):** `calendar-journal_1.0.0_amd64.deb` — `sudo apt install ./calendar-journal_1.0.0_amd64.deb`
             - **Windows:** `Calendar Journal-1.0.0.msi` (unsigned — SmartScreen may warn)
-            - **macOS:** `Calendar Journal-1.0.0.dmg` (unsigned — right-click → Open on first launch)
+            - **macOS (Apple Silicon):** `Calendar Journal-1.0.0.dmg` (unsigned — right-click → Open on first launch)
+            - **macOS (Intel):** `Calendar Journal-1.0.0-Intel.dmg` (unsigned — right-click → Open on first launch)
 
             Each installer bundles its own Java + JavaFX runtime; no separate Java install is needed.
+
+            ## Verify your download
+            `SHA256SUMS.txt` lists the SHA-256 of every installer. Verify with:
+            ```
+            sha256sum -c SHA256SUMS.txt        # Linux
+            shasum -a 256 -c SHA256SUMS.txt    # macOS
+            ```

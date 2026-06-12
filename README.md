@@ -67,8 +67,9 @@ sudo apt install ./packaging/dist/calendar-journal_1.0.0_amd64.deb
 
 ### Releases
 
-Pushing a `v*` tag runs `.github/workflows/release.yml`, which builds the `.deb`,
-`.msi`, and `.dmg` on Linux/Windows/macOS runners and attaches them to the
+Pushing a `v*` tag runs `.github/workflows/release.yml`, which builds installers
+on native runners — Linux `.deb`, Windows `.msi`, and macOS `.dmg` for both Apple
+Silicon and Intel — generates a `SHA256SUMS.txt`, and attaches everything to the
 GitHub Release automatically.
 
 ## Where your data lives
